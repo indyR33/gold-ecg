@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             className="text-xl font-bold tracking-tight text-white hover:text-amber-300 transition-colors"
           >
-            GoldPulse
+            Gold ECG
           </a>
         </div>
 

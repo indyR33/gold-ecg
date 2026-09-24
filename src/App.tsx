@@ -251,7 +251,7 @@ export default function App() {
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-400">GoldPulse</span>
+            <span className="font-semibold text-slate-400">Gold ECG</span>
             <span aria-hidden="true">·</span>
             <span>Suivi de l&apos;Or & Analyse Sémantique RSS</span>
             <span aria-hidden="true">·</span>
