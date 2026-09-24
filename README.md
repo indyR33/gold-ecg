@@ -1,6 +1,6 @@
 # Gold ECG 🪙📊
 
-> **Institutional-grade Real-Time Spot Gold (XAU) Tracker, French Financial RSS Semantic Sentiment Engine, and Macroeconomic Driver Dashboard.**
+> **Institutional-grade Real-Time Spot Gold (XAU) Tracker, Financial RSS Semantic Sentiment Engine, and Macroeconomic Driver Dashboard.**
 
 <div align="center">
 
