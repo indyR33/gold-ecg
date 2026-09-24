@@ -28,7 +28,7 @@ export const GoldPriceWidget: React.FC<GoldPriceWidgetProps> = ({
   onTriggerTick,
 }) => {
   const [timeframe, setTimeframe] = useState<'1H' | '24H' | '7D' | '30D' | '1Y'>('24H');
-  const [chartMode, setChartMode] = useState<'goldapi' | 'vector'>('goldapi');
+  const [chartMode, setChartMode] = useState<'goldapi' | 'vector'>('vector');
   const [hoveredPoint, setHoveredPoint] = useState<PriceHistoryPoint | null>(null);
 
 
@@ -527,9 +527,9 @@ export const GoldPriceWidget: React.FC<GoldPriceWidgetProps> = ({
             {recentTicks.length === 0 ? (
               <div className="text-xs text-slate-500 py-3 text-center font-mono">En attente de nouvelles transactions...</div>
             ) : (
-              recentTicks.slice(0, 5).map((tick) => (
+              recentTicks.slice(0, 5).map((tick, idx) => (
                 <div
-                  key={tick.id}
+                  key={`${tick.id}-${idx}`}
                   className="flex items-center justify-between px-2.5 py-1 bg-slate-950/60 rounded border border-slate-800/50 text-xs font-mono"
                 >
                   <span className="text-slate-400 text-[11px]">{tick.timestamp}</span>

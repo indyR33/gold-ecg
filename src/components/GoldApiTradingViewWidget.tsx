@@ -20,12 +20,19 @@ export const GoldApiTradingViewWidget: React.FC<GoldApiTradingViewWidgetProps> =
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const symbol = SYMBOL_MAP[currency] || 'FOREXCOM:XAUUSD';
+  const currentSymbolRef = useRef<string>('');
 
   useEffect(() => {
     const currentContainer = containerRef.current;
     if (!currentContainer) return;
 
-    // Reset container contents
+    // Prevent rebuilding the widget if already rendered for the same symbol
+    if (currentSymbolRef.current === symbol && currentContainer.childNodes.length > 0) {
+      return;
+    }
+    currentSymbolRef.current = symbol;
+
+    // Clean previous widget contents safely
     currentContainer.innerHTML = '';
 
     const wrapper = document.createElement('div');
@@ -83,9 +90,14 @@ export const GoldApiTradingViewWidget: React.FC<GoldApiTradingViewWidgetProps> =
     currentContainer.appendChild(wrapper);
 
     return () => {
-      if (currentContainer) {
-        currentContainer.innerHTML = '';
-      }
+      // Delay wiping container slightly to avoid breaking active iframe postMessage handlers
+      const containerToClean = currentContainer;
+      currentSymbolRef.current = '';
+      setTimeout(() => {
+        if (containerToClean && currentSymbolRef.current !== symbol) {
+          containerToClean.innerHTML = '';
+        }
+      }, 150);
     };
   }, [symbol, currency]);
 

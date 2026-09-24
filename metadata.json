@@ -2,6 +2,7 @@
   "name": "Gold ECG",
   "description": "Real-time spot gold price tracker and French financial RSS sentiment analyzer with live market feeds and confidence scoring.",
   "requestFramePermissions": [],
+  "Author": "Richard Digonal",
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

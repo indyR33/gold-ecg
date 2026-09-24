@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Currency, GoldPriceData, PriceTick, RSSFeedConfig, WeightUnit } from './types';
 import { getInitialGoldPrice, simulatePriceTick, fetchLiveGoldPriceFromSource } from './services/goldPriceService';
 import { calculateAggregateSentiment } from './services/sentimentEngine';
@@ -33,43 +33,50 @@ export default function App() {
   const [isLiveFeed, setIsLiveFeed] = useState<boolean>(false);
 
   // Synchronize live price extracted from goldprice.org (<span class="gpoticker-price">)
+  const lastPriceRef = useRef<number>(getInitialGoldPrice().spotUSD);
+
   const syncLiveGoldPrice = useCallback(async () => {
     try {
       const live = await fetchLiveGoldPriceFromSource();
       if (live && live.priceUSD > 0) {
-        setGoldData((prev) => {
-          const newPrice = live.priceUSD;
-          const diff = newPrice - prev.spotUSD;
-          const tickDirection: 'up' | 'down' = diff >= 0 ? 'up' : 'down';
-          const direction: 'up' | 'down' | 'neutral' = diff > 0.005 ? 'up' : diff < -0.005 ? 'down' : prev.direction;
+        const newPrice = live.priceUSD;
+        const oldPrice = lastPriceRef.current;
+        const diff = newPrice - oldPrice;
+        lastPriceRef.current = newPrice;
 
-          // Record real tick if price changed or on initial load
-          if (Math.abs(diff) > 0.001) {
-            const realTick: PriceTick = {
-              id: `tick-${Date.now()}`,
-              timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-              price: newPrice,
-              direction: tickDirection,
-              volume: Math.floor(12 + (newPrice % 10)),
-            };
-            setRecentTicks((prevTicks) => [realTick, ...prevTicks.slice(0, 24)]);
-          }
+        const tickDirection: 'up' | 'down' = diff >= 0 ? 'up' : 'down';
+        const direction: 'up' | 'down' | 'neutral' = diff > 0.005 ? 'up' : diff < -0.005 ? 'down' : 'neutral';
 
-          return {
-            ...prev,
-            spotUSD: newPrice,
-            spotEUR: Math.round(newPrice * 0.923 * 100) / 100,
-            spotGBP: Math.round(newPrice * 0.774 * 100) / 100,
-            spotCHF: Math.round(newPrice * 0.881 * 100) / 100,
-            bid: Math.round((newPrice - 0.45) * 100) / 100,
-            ask: Math.round((newPrice + 0.45) * 100) / 100,
-            high24h: Math.max(prev.high24h, newPrice),
-            low24h: Math.min(prev.low24h, newPrice),
-            direction,
-            lastUpdated: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            isLive: true,
+        setGoldData((prev) => ({
+          ...prev,
+          spotUSD: newPrice,
+          spotEUR: Math.round(newPrice * 0.923 * 100) / 100,
+          spotGBP: Math.round(newPrice * 0.774 * 100) / 100,
+          spotCHF: Math.round(newPrice * 0.881 * 100) / 100,
+          bid: Math.round((newPrice - 0.45) * 100) / 100,
+          ask: Math.round((newPrice + 0.45) * 100) / 100,
+          high24h: Math.max(prev.high24h, newPrice),
+          low24h: Math.min(prev.low24h, newPrice),
+          direction: direction !== 'neutral' ? direction : prev.direction,
+          lastUpdated: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          isLive: true,
+        }));
+
+        // Record real tick only if price changed or first sync
+        if (Math.abs(diff) > 0.001) {
+          const uniqueTickId = `tick-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          const realTick: PriceTick = {
+            id: uniqueTickId,
+            timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            price: newPrice,
+            direction: tickDirection,
+            volume: Math.floor(12 + (newPrice % 10)),
           };
-        });
+          setRecentTicks((prevTicks) => {
+            const filtered = prevTicks.filter((t) => t.id !== uniqueTickId);
+            return [realTick, ...filtered.slice(0, 24)];
+          });
+        }
       }
     } catch (e) {
       console.warn('Sync gold price failed:', e);
@@ -109,7 +116,12 @@ export default function App() {
     const interval = setInterval(() => {
       setGoldData((prev) => {
         const { updated, tick } = simulatePriceTick(prev);
-        setRecentTicks((prevTicks) => [tick, ...prevTicks.slice(0, 19)]);
+        queueMicrotask(() => {
+          setRecentTicks((prevTicks) => {
+            const filtered = prevTicks.filter((t) => t.id !== tick.id);
+            return [tick, ...filtered.slice(0, 19)];
+          });
+        });
         return updated;
       });
     }, 3500);
@@ -126,7 +138,12 @@ export default function App() {
   const handleTriggerTick = () => {
     setGoldData((prev) => {
       const { updated, tick } = simulatePriceTick(prev);
-      setRecentTicks((prevTicks) => [tick, ...prevTicks.slice(0, 19)]);
+      queueMicrotask(() => {
+        setRecentTicks((prevTicks) => {
+          const filtered = prevTicks.filter((t) => t.id !== tick.id);
+          return [tick, ...filtered.slice(0, 19)];
+        });
+      });
       return updated;
     });
   };
